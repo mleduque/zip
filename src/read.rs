@@ -10,6 +10,7 @@ use crate::spec;
 use crate::types::{AesMode, AesVendorVersion, AtomicU64, DateTime, System, ZipFileData};
 use crate::zipcrypto::{ZipCryptoReader, ZipCryptoReaderValid, ZipCryptoValidator};
 use byteorder::{LittleEndian, ReadBytesExt};
+use log::warn;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::{self, prelude::*};
@@ -472,7 +473,9 @@ impl<R: Read + io::Seek> ZipArchive<R> {
             {
                 use std::os::unix::fs::PermissionsExt;
                 if let Some(mode) = file.unix_mode() {
-                    fs::set_permissions(&outpath, fs::Permissions::from_mode(mode))?;
+                    if let Err(error) = fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)) {
+                        warn!("failed to set unix mode {} on {} ->\n{:?}", outpath.as_os_str().to_string_lossy(), mode, error)
+                    }
                 }
             }
         }
